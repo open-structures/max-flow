@@ -1,4 +1,4 @@
-# max-flow
+# Network max flow
 Java implementation of the [push-relabel maximum flow algorithm](https://en.wikipedia.org/wiki/Push%E2%80%93relabel_maximum_flow_algorithm)
 for computing maximum flows in a flow network. It is considered to be one of the most efficient maximum flow algorithms.
 
