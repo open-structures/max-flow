@@ -26,6 +26,15 @@ Comparing it to the original network can be used for recover the actual flow. He
 
 ## Quick start
 
+```xml
+<dependency>
+    <groupId>org.open-structures</groupId>
+    <artifactId>max-flow</artifactId>
+    <version>1.0.0</version>
+</dependency>
+```
+
+
 The first step is to create a flow network for which we'd like to find max flow.
 
     FlowNetwork flowNetwork = new FlowNetwork(source, sink);
