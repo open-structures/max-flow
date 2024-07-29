@@ -10,6 +10,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Sets.newHashSet;
 import static java.util.Objects.requireNonNull;
 
+/**
+ * A flow network is a directed graph where each edge has a capacity and can receive a flow.
+ * The amount of flow on an edge cannot exceed its capacity.
+ */
 public class FlowNetwork {
 
     private final Node source, sink;
@@ -41,6 +45,7 @@ public class FlowNetwork {
         checkArgument(capacity >= 0);
         checkNotNull(tail);
         checkNotNull(head);
+        checkArgument(!tail.equals(head));
         if (capacity == 0) {
             if (capacitiesTable.contains(tail, head)) {
                 capacitiesTable.remove(tail, head);

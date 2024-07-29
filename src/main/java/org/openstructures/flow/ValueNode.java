@@ -6,32 +6,37 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class ValueNode<T> implements Node {
 
-  private final T value;
+    private final T value;
 
-  private ValueNode(T value) {
-    this.value = Objects.requireNonNull(value);
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (obj instanceof ValueNode) {
-      return ((ValueNode<?>) obj).getValue().equals(value);
-    } else {
-      return false;
+    private ValueNode(T value) {
+        this.value = Objects.requireNonNull(value);
     }
-  }
 
-  @Override
-  public int hashCode() {
-    return value.hashCode();
-  }
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof ValueNode) {
+            return ((ValueNode<?>) obj).getValue().equals(value);
+        } else {
+            return false;
+        }
+    }
 
-  public T getValue() {
-    return value;
-  }
+    @Override
+    public int hashCode() {
+        return value.hashCode();
+    }
 
-  public static <T> ValueNode<T> node(T value) {
-    checkNotNull(value);
-    return new ValueNode<>(value);
-  }
+    public T getValue() {
+        return value;
+    }
+
+    @Override
+    public String toString() {
+        return value.toString();
+    }
+
+    public static <T> ValueNode<T> node(T value) {
+        checkNotNull(value);
+        return new ValueNode<>(value);
+    }
 }

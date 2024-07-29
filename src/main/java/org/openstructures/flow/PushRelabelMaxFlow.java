@@ -1,18 +1,12 @@
 package org.openstructures.flow;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static com.google.common.base.Preconditions.*;
 import static com.google.common.collect.Lists.newLinkedList;
 import static com.google.common.collect.Maps.newHashMap;
 import static com.google.common.collect.Sets.newHashSet;
-
-import java.util.Comparator;
-import java.util.Map;
-import java.util.Optional;
-import java.util.OptionalInt;
-import java.util.Queue;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Definitions: for arc (i,j) we refer to node i as the tail of arc (i,j) and node j as its head.
@@ -26,25 +20,9 @@ public class PushRelabelMaxFlow {
     private final AdmissibleNodeSelectionStrategy admissibleNodeSelectionStrategy;
 
     public PushRelabelMaxFlow(FlowNetwork flowNetwork) {
-        this(flowNetwork,
-                new HighestLabelActiveNodeSelectionStrategy(),
-                new RandomAdmissibleNodeSelectionStrategy());
-    }
-
-    public PushRelabelMaxFlow(FlowNetwork flowNetwork,
-                              AdmissibleNodeSelectionStrategy admissibleNodeSelectionStrategy) {
-        this(flowNetwork, new HighestLabelActiveNodeSelectionStrategy(), admissibleNodeSelectionStrategy);
-
-    }
-
-    public PushRelabelMaxFlow(FlowNetwork flowNetwork,
-                              ActiveNodeSelectionStrategy activeNodeSelectionStrategy,
-                              AdmissibleNodeSelectionStrategy admissibleNodeSelectionStrategy) {
-        checkNotNull(flowNetwork);
-        checkNotNull(activeNodeSelectionStrategy);
-        this.flowNetwork = flowNetwork;
-        this.activeNodeSelectionStrategy = activeNodeSelectionStrategy;
-        this.admissibleNodeSelectionStrategy = admissibleNodeSelectionStrategy;
+        this.flowNetwork = Objects.requireNonNull(flowNetwork);
+        this.activeNodeSelectionStrategy = new HighestLabelActiveNodeSelectionStrategy();
+        this.admissibleNodeSelectionStrategy = new RandomAdmissibleNodeSelectionStrategy();
     }
 
     /**
@@ -130,6 +108,7 @@ public class PushRelabelMaxFlow {
 
     /**
      * Active node is a node with strictly positive excess.
+     * The source and sink nodes are never active.
      * Feasible flow has to satisfy flow bound constraint,
      * that is the amount of flow coming into an intermediate node equals the amount of flow coming out.
      * So the presence of active nodes indicates that the solution is infeasible.
@@ -158,6 +137,7 @@ public class PushRelabelMaxFlow {
         checkArgument(amount <= getArcCapacity(tail, head), "Can't push more than residual capacity");
 
         setArcCapacity(getArcCapacity(tail, head) - amount, tail, head);
+        // setting the "reverse" arc capacity
         setArcCapacity(getArcCapacity(head, tail) + amount, head, tail);
         addToExcess(amount, head);
         if (!isSource(tail)) {
@@ -176,7 +156,9 @@ public class PushRelabelMaxFlow {
         if (amount == getNodeExcess(node)) {
             nodeExcessMap.remove(node);
         } else {
-            nodeExcessMap.put(node, nodeExcessMap.get(node) - amount);
+            int newExcess = nodeExcessMap.get(node) - amount;
+            checkState(newExcess > 0, "Excess can not be negative");
+            nodeExcessMap.put(node, newExcess);
         }
     }
 
@@ -236,7 +218,7 @@ public class PushRelabelMaxFlow {
      * The main way to affect performance of push relabel algorithm is by specifying the rule to
      * select active nodes.
      */
-    public interface ActiveNodeSelectionStrategy {
+    private interface ActiveNodeSelectionStrategy {
         Node getActiveNode(PushRelabelMaxFlow pushRelabelMaxFlow);
     }
 
@@ -266,7 +248,7 @@ public class PushRelabelMaxFlow {
     /**
      * Selects an active node with the highest value of the distance label.
      */
-    public static class HighestLabelActiveNodeSelectionStrategy implements ActiveNodeSelectionStrategy {
+    private static class HighestLabelActiveNodeSelectionStrategy implements ActiveNodeSelectionStrategy {
         @Override
         public Node getActiveNode(PushRelabelMaxFlow pushRelabelMaxFlow) {
             return pushRelabelMaxFlow.getActiveNodes()
