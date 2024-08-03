@@ -1,7 +1,10 @@
 package org.openstructures.flow;
 
 import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.ImmutableTable;
 import com.google.common.collect.Table;
+import org.open_structures.memento.Memento;
+import org.open_structures.memento.Restorable;
 
 import java.util.Set;
 
@@ -14,7 +17,7 @@ import static java.util.Objects.requireNonNull;
  * A flow network is a directed graph where each edge has a capacity and can receive a flow.
  * The amount of flow on an edge cannot exceed its capacity.
  */
-public class FlowNetwork {
+public class FlowNetwork implements Restorable<FlowNetwork.State> {
 
     private final Node source, sink;
 
@@ -79,5 +82,28 @@ public class FlowNetwork {
 
     public Node getSource() {
         return source;
+    }
+
+    @Override
+    public State getState() {
+        return new State(this, ImmutableTable.copyOf(capacitiesTable));
+    }
+
+    @Override
+    public void restore(State state) {
+        checkNotNull(state);
+        checkArgument(this.equals(state.originFlowNetwork));
+        capacitiesTable.clear();
+        capacitiesTable.putAll(state.capacitiesTable);
+    }
+
+    public static class State implements Memento {
+        private final FlowNetwork originFlowNetwork;
+        private final ImmutableTable<Node, Node, Integer> capacitiesTable;
+
+        private State(FlowNetwork originFlowNetwork, ImmutableTable<Node, Node, Integer> capacitiesTable) {
+            this.originFlowNetwork = requireNonNull(originFlowNetwork);
+            this.capacitiesTable = requireNonNull(capacitiesTable);
+        }
     }
 }
