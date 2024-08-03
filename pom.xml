@@ -36,6 +36,11 @@
             <artifactId>guava</artifactId>
             <version>33.2.0-jre</version>
         </dependency>
+        <dependency>
+            <groupId>org.open-structures</groupId>
+            <artifactId>memento</artifactId>
+            <version>1.0.0</version>
+        </dependency>
 
         <!-- Test dependencies-->
         <dependency>

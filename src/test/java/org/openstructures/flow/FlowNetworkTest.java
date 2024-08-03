@@ -116,4 +116,36 @@ public class FlowNetworkTest {
         assertThat(flowNetwork.getArcCapacity(source, nodeA)).isEqualTo(5);
         assertThat(flowNetwork.getArcCapacity(nodeA, nodeC)).isEqualTo(1);
     }
+
+    @Test
+    public void shouldGetAndRestoreState() {
+        // when
+        Node newNode = node("newNode");
+        FlowNetwork.State memento = flowNetwork.getState();
+        flowNetwork.setArcCapacity(100, source, nodeA);
+        flowNetwork.setArcCapacity(1, nodeA, nodeC);
+        flowNetwork.setArcCapacity(1, newNode, sink);
+        flowNetwork.restore(memento);
+
+        // then
+        assertThat(flowNetwork.getArcCapacity(source, nodeA)).isEqualTo(3);
+        assertThat(flowNetwork.getArcCapacity(nodeA, nodeC)).isZero();
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void shouldThrowExceptionIfTryingToRestoreWithStateFromAnotherNetwork() {
+        // given
+        Node s = node("s");
+        Node t = node("t");
+        Node nodeI = node("I");
+        FlowNetwork anotherFlowNetwork = new FlowNetwork(s, t);
+        anotherFlowNetwork.setArcCapacity(10, s, nodeI);
+        anotherFlowNetwork.setArcCapacity(10, nodeI, t);
+        FlowNetwork.State anotherNetworkState = anotherFlowNetwork.getState();
+
+        // when
+        flowNetwork.restore(anotherNetworkState);
+
+        // then expect exception
+    }
 }
