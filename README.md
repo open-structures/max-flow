@@ -30,7 +30,7 @@ Comparing it to the original network can be used for recover the actual flow. He
 <dependency>
     <groupId>org.open-structures</groupId>
     <artifactId>max-flow</artifactId>
-    <version>1.1.0</version>
+    <version>1.2.0</version>
 </dependency>
 ```
 

@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.open-structures</groupId>
     <artifactId>max-flow</artifactId>
-    <version>1.1.0</version>
+    <version>1.2.0</version>
     <packaging>jar</packaging>
     <name>Open Structures - Max Flow</name>
     <description>Java implementation of AVL Tree</description>
