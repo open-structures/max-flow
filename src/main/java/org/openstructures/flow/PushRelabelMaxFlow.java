@@ -197,12 +197,12 @@ public class PushRelabelMaxFlow implements Restorable<PushRelabelMaxFlow.State> 
      * Excess can't be negative, that is amount of flow going out of the node has to be less or equal the flow coming in.
      * Source is the only node that can have negative excess.
      */
-    int getNodeExcess(Node node) {
+    public int getNodeExcess(Node node) {
         checkNotNull(node);
         return nodeExcessMap.getOrDefault(node, 0);
     }
 
-    int getArcCapacity(Node tail, Node head) {
+    public int getArcCapacity(Node tail, Node head) {
         checkNotNull(tail);
         checkNotNull(head);
         return flowNetwork.getArcCapacity(tail, head);
