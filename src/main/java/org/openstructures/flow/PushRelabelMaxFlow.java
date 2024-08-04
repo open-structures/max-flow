@@ -1,5 +1,9 @@
 package org.openstructures.flow;
 
+import com.google.common.collect.ImmutableMap;
+import org.open_structures.memento.Memento;
+import org.open_structures.memento.Restorable;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -7,22 +11,25 @@ import static com.google.common.base.Preconditions.*;
 import static com.google.common.collect.Lists.newLinkedList;
 import static com.google.common.collect.Maps.newHashMap;
 import static com.google.common.collect.Sets.newHashSet;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Definitions: for arc (i,j) we refer to node i as the tail of arc (i,j) and node j as its head.
  * Recommended reading is Chapter 7 from Network Flows Theory, Algorithms, and Applications by Ravindra K. Ahuja
  */
-public class PushRelabelMaxFlow {
+public class PushRelabelMaxFlow implements Restorable<PushRelabelMaxFlow.State> {
     private final Map<Node, Integer> nodeDistanceMap = newHashMap();
     private final Map<Node, Integer> nodeExcessMap = newHashMap();
     private final FlowNetwork flowNetwork;
-    private final ActiveNodeSelectionStrategy activeNodeSelectionStrategy;
     private final AdmissibleNodeSelectionStrategy admissibleNodeSelectionStrategy;
 
+    public PushRelabelMaxFlow(FlowNetwork flowNetwork, AdmissibleNodeSelectionStrategy admissibleNodeSelectionStrategy) {
+        this.flowNetwork = requireNonNull(flowNetwork);
+        this.admissibleNodeSelectionStrategy = requireNonNull(admissibleNodeSelectionStrategy);
+    }
+
     public PushRelabelMaxFlow(FlowNetwork flowNetwork) {
-        this.flowNetwork = Objects.requireNonNull(flowNetwork);
-        this.activeNodeSelectionStrategy = new HighestLabelActiveNodeSelectionStrategy();
-        this.admissibleNodeSelectionStrategy = new RandomAdmissibleNodeSelectionStrategy();
+        this(flowNetwork, new RandomAdmissibleNodeSelectionStrategy());
     }
 
     /**
@@ -96,9 +103,20 @@ public class PushRelabelMaxFlow {
      */
     private void pushRelabel() {
         while (hasActiveNodes()) {
-            Node activeNode = activeNodeSelectionStrategy.getActiveNode(this);
+            Node activeNode = getActiveNode();
             pushRelabelNode(activeNode);
         }
+    }
+
+    /**
+     * The main way to affect performance of push relabel algorithm is by specifying the rule to select active nodes.
+     * Here we select an active node with the highest value of the distance label.
+     */
+    private Node getActiveNode() {
+        return getActiveNodes()
+                .stream()
+                .max(Comparator.comparingInt(this::getNodeDistance))
+                .orElse(null);
     }
 
     public void preflowPush() {
@@ -214,25 +232,19 @@ public class PushRelabelMaxFlow {
         return nodeExcessMap.keySet().stream().filter(n -> !n.equals(s) && !n.equals(t)).collect(Collectors.toSet());
     }
 
-    /**
-     * The main way to affect performance of push relabel algorithm is by specifying the rule to
-     * select active nodes.
-     */
-    private interface ActiveNodeSelectionStrategy {
-        Node getActiveNode(PushRelabelMaxFlow pushRelabelMaxFlow);
+    @Override
+    public State getState() {
+        return new State(flowNetwork.getState(), ImmutableMap.copyOf(nodeDistanceMap), ImmutableMap.copyOf(nodeExcessMap));
     }
 
-    /**
-     * Admissible node is a node that is 1 closer to the sink than the current node (n):
-     * distance(n) = distance(admissibleNode) + 1
-     * Distance function has to satisfy the following condition:
-     * distance(sink) = 0 and d(i) &lt;= d(j) + 1 where i,j is the arc that belongs to this network
-     * Distance function basically determines the distance of the node from the sink.
-     * The first condition states that the sink is 0 away from itself.
-     * The second condition states that the node can't be further from the sink than 1 plus the distance from the sink of its adjacent node.
-     */
-    public interface AdmissibleNodeSelectionStrategy {
-        Optional<Node> getAdmissibleNode(PushRelabelMaxFlow pushRelabelMaxFlow, Node n);
+    @Override
+    public void restore(State state) {
+        checkNotNull(state);
+        flowNetwork.restore(state.flowNetworkState);
+        nodeDistanceMap.clear();
+        nodeDistanceMap.putAll(state.nodeDistanceMap);
+        nodeExcessMap.clear();
+        nodeExcessMap.putAll(state.nodeExcessMap);
     }
 
     private static class RandomAdmissibleNodeSelectionStrategy implements AdmissibleNodeSelectionStrategy {
@@ -245,16 +257,15 @@ public class PushRelabelMaxFlow {
         }
     }
 
-    /**
-     * Selects an active node with the highest value of the distance label.
-     */
-    private static class HighestLabelActiveNodeSelectionStrategy implements ActiveNodeSelectionStrategy {
-        @Override
-        public Node getActiveNode(PushRelabelMaxFlow pushRelabelMaxFlow) {
-            return pushRelabelMaxFlow.getActiveNodes()
-                    .stream()
-                    .max(Comparator.comparingInt(pushRelabelMaxFlow::getNodeDistance))
-                    .orElse(null);
+    public static class State implements Memento {
+        private final FlowNetwork.State flowNetworkState;
+        private final ImmutableMap<Node, Integer> nodeDistanceMap;
+        private final ImmutableMap<Node, Integer> nodeExcessMap;
+
+        private State(FlowNetwork.State flowNetworkState, ImmutableMap<Node, Integer> nodeDistanceMap, ImmutableMap<Node, Integer> nodeExcessMap) {
+            this.flowNetworkState = requireNonNull(flowNetworkState);
+            this.nodeDistanceMap = requireNonNull(nodeDistanceMap);
+            this.nodeExcessMap = requireNonNull(nodeExcessMap);
         }
     }
 }
