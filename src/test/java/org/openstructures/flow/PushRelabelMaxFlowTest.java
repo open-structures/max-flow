@@ -215,4 +215,26 @@ public class PushRelabelMaxFlowTest {
         assertThat(pushRelabelMaxFlow.getArcCapacity(nodeA, source)).isEqualTo(1);
         assertThat(pushRelabelMaxFlow.getArcCapacity(source, nodeC)).isEqualTo(1);
     }
+
+    @Test
+    public void shouldGetAndRestoreState() {
+        // when
+        pushRelabelMaxFlow.pushFlow(2, source, nodeA);
+        PushRelabelMaxFlow.State memento = pushRelabelMaxFlow.getState();
+        pushRelabelMaxFlow.pushFlow(2, nodeA, nodeD);
+        pushRelabelMaxFlow.pushFlow(1, nodeD, sink);
+        pushRelabelMaxFlow.restore(memento);
+
+        // then
+        assertThat(pushRelabelMaxFlow.getFlowAmount()).isZero();
+
+        // and
+        assertThat(pushRelabelMaxFlow.getArcCapacity(nodeA, source)).isEqualTo(2); // before saving to memento
+        assertThat(pushRelabelMaxFlow.getArcCapacity(nodeD, nodeA)).isZero();
+        assertThat(pushRelabelMaxFlow.getArcCapacity(sink, nodeD)).isZero();
+
+        // and
+        assertThat(pushRelabelMaxFlow.getNodeExcess(nodeA)).isEqualTo(2); // before saving to memento
+        assertThat(pushRelabelMaxFlow.getNodeExcess(nodeD)).isZero();
+    }
 }
